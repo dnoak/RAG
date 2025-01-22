@@ -6,20 +6,6 @@ import re
 import json
 
 @dataclass
-class SystemPrompt:
-    background: str
-    steps: list[str]
-    output: str
-
-    def build(self):
-        prompt = self.background + '\n'
-        for i, step in enumerate(self.steps):
-            prompt += f"({i+1}) {step}\n"
-        prompt += '\nFormato de resposta com sua estrutura:\n\n'
-        prompt += self.output
-        return prompt
-
-@dataclass
 class OutputSchema:
     schema: Type[BaseModel] | BaseModel
     attribute_keys: dict[str, str] = field(
@@ -48,41 +34,19 @@ class OutputSchema:
 
         return '\n'.join(prompt_dict) + '\n}'
 
+@dataclass
+class SystemPrompt:
+    background: str
+    steps: list[str]
+    output: str | OutputSchema
 
-
-class SimpleDolphinOutput(BaseModel):
-    response: str = Field(
-        default='...',
-        description="Resposta da pergunta sobre golfinhos"
-    )
-
-
-# s = SystemPrompt(
-#     background='Você é um assistente virtual que responde apenas perguntas sobre golfinhos em JSON.',
-#     steps=[
-#         'formate a pergunta do usuário com emojis de golfinhos e fundo do mar',
-#         'em seguida, responda a pergunta do usuário usando rimas',
-#         'caso a pergunta não seja sobre golfinhos, faça onomatopeias de golfinhos com emojis',
-#     ],
-#     output=OutputSchema(schema=SimpleDolphinOutput()).build(include_structure=False)
-# )
-
-# print()
-# print(s.build())
-
-class ComplexDolphinOutput(BaseModel):
-    species: str | None = Field(
-        default=None,
-        description="Espécie do golfinho"
-    )
-    subspecies: str | None = Field(
-        default=None,
-        description="Subspécie do golfinho"
-    )
-    color: str | None = Field(
-        default=None,
-        description="Cor do golfinho"
-    )
+    def build(self):
+        prompt = self.background + '\n'
+        for i, step in enumerate(self.steps):
+            prompt += f"({i+1}) {step}\n"
+        prompt += '\nFormato de resposta com sua estrutura comentada (com //):\n\n'
+        prompt += self.output if isinstance(self.output, str) else self.output.build()
+        return prompt
 
 
 if __name__ == '__main__':

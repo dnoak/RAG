@@ -7,6 +7,7 @@ from typing import Any
 from types import SimpleNamespace
 from openai import OpenAI
 from dataclasses import dataclass
+from termcolor import colored
 import time
 import ast
 import utils.utils
@@ -31,8 +32,26 @@ class GptLlmApi(models.ml.LlmModel):
             response_format={"type": "json_object"},
         )
     
-    def generate(self, messages: list[dict]) -> models.llm.ResultsMetadata:
-        result, process_time = self._timed_gpt_generate(messages)
+    def debug(self, messages: list[dict], result: Any) -> None:
+        chat_colors = {
+            "system": "yellow",
+            "assistant": "green",
+            "user": "blue",
+        }
+        for message in messages:
+            print(
+                colored(f"[{message['role']}]:", color=chat_colors[message['role']], attrs=['bold']),
+                colored(message['content'], chat_colors[message['role']])
+            )
+        print(
+            colored(f"[{result.choices[0].message.role}]:", color=chat_colors[result.choices[0].message.role], attrs=['bold']),
+            colored(result.choices[0].message.content, chat_colors[result.choices[0].message.role])
+        )
+    
+    def generate(self, messages: list[dict], debug: bool = False) -> models.llm.ResultsMetadata:
+        result, process_time = self._timed_gpt_generate(messages=messages)
+        if debug: self.debug(messages, result)
+        
         return models.llm.ResultsMetadata(
             model_name=self.model_name,
             input_text=''.join([m['content'] for m in messages]),
@@ -44,30 +63,12 @@ class GptLlmApi(models.ml.LlmModel):
 
 @dataclass
 class FakeGptLlmApi(GptLlmApi):
-    fake_process_time: float = 1.1234
-    # faker = Faker()
+    fake_process_time: float = 0.1234
 
     def __post_init__(self):
         super().__post_init__()
         self._timed_gpt_generate: function = self._mock_timed_gpt_generate
-    
-    def _decode_stringfied_data(self, encoded_str: str) -> list[dict]:
-        pattern = re.compile(r'\[(\d+)\](.*?)\n\n', re.DOTALL)
-        matches = pattern.findall(encoded_str.strip())
-        result = []
-        for match in matches:
-            index, content = match
-            lines = content.strip().split('\n')
-            if len(lines) < 2:
-                continue
-            input_data = lines[0].split(':', 1)[1].strip()
-            response_format = lines[1].split(':', 1)[1].strip()
-            result.append({
-                'input': input_data,
-                'output_format': ast.literal_eval(response_format)
-            })
-        return result
-    
+
     def _generate_api_response(self, input_prompts, fake_llm):
         content = json.dumps(fake_llm, indent=4, ensure_ascii=False)
         response = SimpleNamespace(
@@ -81,12 +82,8 @@ class FakeGptLlmApi(GptLlmApi):
     @utils.utils.Timer.timer
     def _mock_timed_gpt_generate(self, **kwargs) -> Any:
         time.sleep(self.fake_process_time)
-        input_list = self._decode_stringfied_data(kwargs['input_query'])
-        fake_llm = {
-            i: random.choice(data['output_format']) 
-            for i, data in enumerate(input_list)
-        }
         return self._generate_api_response(
-            input_prompts=''.join([v for v in kwargs.values()]),
-            fake_llm=fake_llm)
+            input_prompts=''.join([m['content'] for m in kwargs['messages']]),
+            fake_llm={'[Fake] response': ['1', '2', '3']}
+        )
     

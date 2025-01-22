@@ -41,7 +41,7 @@ agents = {
             'responda a pergunta do usuário usando rimas utilizando emojis do fundo do mar',
             'caso a pergunta não seja sobre golfinhos, responda **apenas** com emojis temáticos de golfinhos e fundo do mar, sem usar texto.',
         ],
-        output=OutputSchema(schema=SimpleDolphinOutput()).build()
+        output=OutputSchema(schema=SimpleDolphinOutput())
     ),
 
     'dolphin_species': SystemPrompt(
@@ -50,7 +50,7 @@ agents = {
             'Você irá preencher as informações do golfinho na query caso elas estejam explícitas ou implícitas na pergunta.',
             'caso a pergunta não seja sobre golfinhos, preencha a query com onomatopeias do fundo do mar com emojis',
         ],
-        output=OutputSchema(schema=DolphinClassifierOutput()).build()
+        output=OutputSchema(schema=DolphinClassifierOutput())
     ),
 
     'shark': SystemPrompt(
@@ -59,18 +59,27 @@ agents = {
             'responda a pergunta do usuário usando rimas utilizando emojis do fundo do mar',
             'caso a pergunta não seja sobre tubarões, responda **apenas** com emojis temáticos de tubarões e fundo do mar, sem usar texto.',
         ],
-        output=OutputSchema(schema=SimpleSharkOutput()).build()
+        output=OutputSchema(schema=SimpleSharkOutput())
     ),
 }
 
 chat = Chat(
     llm_model=GptLlmApi(model_name='gpt-4o-mini'),
-    history_size=5
+    history_size=7
 )
 chat.system(agents['dolphin'].build())
-chat.assistant('Você está pronto para começar a conversar com o golfinho')
+chat.assistant('Você está pronto para começar a conversar com o golfinho!')
+history = False
+
+os.system('cls')
 while True:
     question = input('[Pergunta]: ')
+    if question.startswith('/history'):
+        if question == '/history true':
+            history = True
+        elif question == '/history false':
+            history = False
+        continue
     if question.startswith('/system'):
         if question == '/system dolphin':
             chat.system(agents['dolphin'].build())
@@ -84,7 +93,5 @@ while True:
         continue
 
     chat.user(question)
-    chat.process(single_message=True)
-
-    os.system('cls')
-    chat.debug()
+    chat.process(use_history=history, debug=True)
+    print('\n'*3)
