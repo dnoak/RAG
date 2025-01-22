@@ -30,3 +30,4 @@ def cosine_similarity(v1, v2):
 
 print(f"similaridade 1 com 2: {cosine_similarity(embedding1, embedding2)}")
 print(f"similaridade 1 com 3: {cosine_similarity(embedding1, embedding3)}")
+print(f"similaridade 2 com 3: {cosine_similarity(embedding2, embedding3)}")

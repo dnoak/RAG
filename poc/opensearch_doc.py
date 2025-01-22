@@ -1,12 +1,17 @@
 from glob import glob
 import json
 from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
+from haystack_integrations.components.retrievers.opensearch import OpenSearchBM25Retriever
+from haystack_integrations.components.retrievers.opensearch import OpenSearchEmbeddingRetriever
+
+# from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+# from haystack_integrations.components.retrievers.qdrant import QdrantHybridRetriever
 from haystack import Document
 
 document_store = OpenSearchDocumentStore(
     hosts="http://localhost:9200", 
     use_ssl=True,
-    verify_certs=False, 
+    verify_certs=False,
     http_auth=("admin", "admin")
 )
 
