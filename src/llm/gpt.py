@@ -14,6 +14,13 @@ import utils.utils
 import models.gpt
 import models.llm
 import models.ml
+from src.prompts import SystemPrompt, AssistantPrompt, UserPrompt
+
+debug_colors = {
+    "system": "yellow",
+    "assistant": "green",
+    "user": "blue",
+}
 
 @dataclass
 class GptLlmApi(models.ml.LlmModel):
@@ -24,39 +31,46 @@ class GptLlmApi(models.ml.LlmModel):
         self.model_specs = models.gpt.GptModelSpecs(model_name=self.model_name)
 
     @utils.utils.Timer.timer
-    def _timed_gpt_generate(self, messages: list[dict]) -> Any:
-        return self.openai_client.chat.completions.create(
-            messages=messages, # type: ignore
+    def _timed_gpt_generate(
+            self, system_prompt: SystemPrompt, 
+            messages: list[UserPrompt | AssistantPrompt],
+            debug: bool
+        ) -> Any:
+        dict_messages = [{'role': m.role, 'content': m.content} for m in messages]
+        dict_messages += [{'role': system_prompt.role, 'content': system_prompt.content}]
+        response =  self.openai_client.chat.completions.create(
+            messages=dict_messages, # type: ignore
             model=self.model_name,
             max_tokens=None,
             response_format={"type": "json_object"},
         )
-    
-    def debug(self, messages: list[dict], result: Any) -> None:
-        chat_colors = {
-            "system": "yellow",
-            "assistant": "green",
-            "user": "blue",
-        }
-        for message in messages:
+
+        if debug:
+            for dict_message in dict_messages:
+                print(
+                    colored(f"[{dict_message['role']}]:", color=debug_colors[dict_message['role']], attrs=['bold']),
+                    colored(dict_message['content'], debug_colors[dict_message['role']])
+                )
             print(
-                colored(f"[{message['role']}]:", color=chat_colors[message['role']], attrs=['bold']),
-                colored(message['content'], chat_colors[message['role']])
+                colored(f"[{response.choices[0].message.role}]:", color=debug_colors[response.choices[0].message.role], attrs=['bold']),
+                colored(response.choices[0].message.content, debug_colors[response.choices[0].message.role])
             )
-        print(
-            colored(f"[{result.choices[0].message.role}]:", color=chat_colors[result.choices[0].message.role], attrs=['bold']),
-            colored(result.choices[0].message.content, chat_colors[result.choices[0].message.role])
-        )
-    
-    def generate(self, messages: list[dict], debug: bool = False) -> models.llm.ResultsMetadata:
-        result, process_time = self._timed_gpt_generate(messages=messages)
-        if debug: self.debug(messages, result)
+        return response
+
+    def generate(
+            self, system_prompt: SystemPrompt, 
+            messages: list[UserPrompt | AssistantPrompt], 
+            debug: bool = False
+        ) -> models.llm.ResultsMetadata:
+        
+        result, process_time = self._timed_gpt_generate(system_prompt, messages, debug)
         
         return models.llm.ResultsMetadata(
             model_name=self.model_name,
-            input_text=''.join([m['content'] for m in messages]),
+            input_text=''.join([m.content for m in messages]),
             input_tokens=result.usage.prompt_tokens,
             output_text=result.choices[0].message.content,
+            output_dict=None,
             output_tokens=result.usage.completion_tokens,
             process_time=process_time
         )

@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 from abc import abstractmethod
 
 @dataclass
@@ -24,6 +24,7 @@ class ResultsMetadata(DefaultModel):
     input_text: str
     input_tokens: int
     output_text: str
+    output_dict: Optional[dict]
     output_tokens: int
     process_time: float
 
