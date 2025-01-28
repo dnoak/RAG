@@ -1,0 +1,134 @@
+{
+    "order": "Squatiniformes",
+    "name": "SQUATINIFORMES",
+    "families": [
+      {
+        "name": "Squatinidae",
+        "common_name": "angel sharks",
+        "genera": [
+          {
+            "name": "Squatina",
+            "author": "A. M. C. Duméril, 1806",
+            "species": [
+              {
+                "scientific_name": "Squatina aculeata",
+                "author": "G. Cuvier, 1829",
+                "common_name": "saw-back angelshark"
+              },
+              {
+                "scientific_name": "Squatina africana",
+                "author": "Regan, 1908",
+                "common_name": "African angelshark"
+              },
+              {
+                "scientific_name": "Squatina albipunctata",
+                "author": "Last & W. T. White, 2008",
+                "common_name": "eastern angelshark"
+              },
+              {
+                "scientific_name": "Squatina argentina",
+                "author": "Marini, 1930",
+                "common_name": "Argentine angelshark"
+              },
+              {
+                "scientific_name": "Squatina armata",
+                "author": "Philippi {Krumweide}, 1887",
+                "common_name": "Chilean angelshark"
+              },
+              {
+                "scientific_name": "Squatina australis",
+                "author": "Regan, 1906",
+                "common_name": "Australian angelshark"
+              },
+              {
+                "scientific_name": "Squatina caillieti",
+                "author": "J. H. Walsh, Ebert & L. J. V. Compagno, 2011",
+                "common_name": "Philippines angelshark"
+              },
+              {
+                "scientific_name": "Squatina californica",
+                "author": "Ayres, 1859",
+                "common_name": "Pacific angelshark"
+              },
+              {
+                "scientific_name": "Squatina dumeril",
+                "author": "Lesueur, 1818",
+                "common_name": "Atlantic angelshark"
+              },
+              {
+                "scientific_name": "Squatina formosa",
+                "author": "S. C. Shen & W. H. Ting, 1972",
+                "common_name": "Taiwan angelshark"
+              },
+              {
+                "scientific_name": "Squatina guggenheim",
+                "author": "Marini, 1936",
+                "common_name": "angular angelshark"
+              },
+              {
+                "scientific_name": "Squatina heteroptera",
+                "author": "Castro-Aguirre, Espinosa-Pérez & Huidobro-Campos, 2007",
+                "common_name": "disparate angelshark"
+              },
+              {
+                "scientific_name": "Squatina japonica",
+                "author": "Bleeker, 1858",
+                "common_name": "Japanese angelshark"
+              },
+              {
+                "scientific_name": "Squatina legnota",
+                "author": "Last & W. T. White, 2008",
+                "common_name": "Indonesian angelshark"
+              },
+              {
+                "scientific_name": "Squatina mapama",
+                "author": "Long, Ebert, Tavera, Pizarro & Robertson, 2021",
+                "common_name": "short-crested angelshark"
+              },
+              {
+                "scientific_name": "Squatina mexicana",
+                "author": "Castro-Aguirre, Espinosa-Pérez & Huidobro-Campos, 2007",
+                "common_name": "Mexican angelshark"
+              },
+              {
+                "scientific_name": "Squatina nebulosa",
+                "author": "Regan, 1906",
+                "common_name": "clouded angelshark"
+              },
+              {
+                "scientific_name": "Squatina occulta",
+                "author": "Vooren & K. G. da Silva, 1992",
+                "common_name": "hidden angelshark"
+              },
+              {
+                "scientific_name": "Squatina oculata",
+                "author": "Bonaparte, 1840",
+                "common_name": "smooth-back angelshark"
+              },
+              {
+                "scientific_name": "Squatina pseudocellata",
+                "author": "Last & W. T. White, 2008",
+                "common_name": "western angelshark"
+              },
+              {
+                "scientific_name": "Squatina squatina",
+                "author": "Linnaeus, 1758",
+                "common_name": "angelshark"
+              },
+              {
+                "scientific_name": "Squatina tergocellata",
+                "author": "McCulloch, 1914",
+                "common_name": "ornate angelshark"
+              },
+              {
+                "scientific_name": "Squatina tergocellatoides",
+                "author": "J.S.T.F. Chen, 1963",
+                "common_name": "ocellated angelshark"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  

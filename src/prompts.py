@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from dataclasses import dataclass
 from typing import Literal, Type
+from models.agents import AgentSchema
 import typing
 import json
 
@@ -20,10 +21,10 @@ class Prompt:
 
 @dataclass
 class SystemPrompt:
-    input_schema: Type[BaseModel]
+    input_schema: Type[AgentSchema]
     background: str
     steps: list[str]
-    output_schema: Type[BaseModel]
+    output_schema: Type[AgentSchema]
 
     def _build_output_prompt(self):
         json_schema = self.output_schema.model_json_schema()

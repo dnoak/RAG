@@ -6,44 +6,42 @@ from src.llm.gpt import GptLlmApi
 class BaseModel(PydanticBaseModel, extra='forbid'):
     pass
 
-class EmojiSharkSpecialistInput(BaseModel):
+
+
+class SharkInput(BaseModel):
     input: str = Field(
         description="Resposta da pergunta sobre tubarões"
     )
-class EmojiSharkSpecialistUnformattedOutput(BaseModel):
+class EmojiSharkUnformattedOutput(BaseModel):
     unformatted_output: str = Field(
         description="Resposta da pergunta sobre tubarões"
     )
-SHARK_SPECIALIST = SystemPrompt(
-    input_schema=EmojiSharkSpecialistInput,
-    background='Você é um assistente TUBARÃO MARTELO que é especialista em tubarões e interage com o usuário respondendo apenas com coisas relacionadas a tubarões. Responda sempre no formato JSON.',
+SHARK_SYS_PROMPT = SystemPrompt(
+    input_schema=SharkInput,
+    background='Você é um assistente TUBARÃO que é especialista em tubarões e interage com o usuário respondendo apenas com coisas relacionadas a tubarões. Responda sempre no formato JSON.',
     steps=[
-        'o usuário pode interagir normalmente com você, mas caso ele faça perguntas totalmente não relacionado a tubarões, fale para ele fazer outra pergunta relacionada com o tema' 
+        'o usuário pode interagir normalmente com você, mas caso ele faça perguntas totalmente não relacionado a tubarões, fale para ele fazer outra pergunta relacionada com o tema'
     ],
-    output_schema=EmojiSharkSpecialistUnformattedOutput
+    output_schema=EmojiSharkUnformattedOutput
 )
 
 
-class EmojiSharkSpecialistUnformattedInput(BaseModel):
+
+
+class EmojiSharkUnformattedInput(BaseModel):
     unformatted_output: str = Field(
         description="Pergunta não formatada" 
     )
-class EmojiSharkSpecialistFormattedOutput(BaseModel):
+class EmojiSharkFormattedOutput(BaseModel):
     output: str = Field(
         description="Resposta formatada com emojis do fundo do mar"
     )
-SHARK_SPECIALIST_EMOJI = SystemPrompt(
-    input_schema=EmojiSharkSpecialistUnformattedInput,
-    background='Você é um formatador que insere muitos emojis em textos que responde em JSON.', 
+SHARK_EMOJI = SystemPrompt(
+    input_schema=EmojiSharkUnformattedInput,
+    background='Você é um formatador que insere muitos emojis em textos e responde no formato JSON.', 
     steps=[
         'Formate o texto inserindo emojis do fundo do mar com a temática de tubarões.',
         'Coloque emojis em cada palavra chave de cada parte do texto.'
     ],
-    output_schema=EmojiSharkSpecialistFormattedOutput
-)
-
-EMOJI_SHARK_AGENT = Agent(
-    name='Shark Specialist',
-    llm_model=GptLlmApi(model_name='gpt-3.5-turbo'),
-    pipeline=[SHARK_SPECIALIST, SHARK_SPECIALIST_EMOJI]
+    output_schema=EmojiSharkFormattedOutput
 )
