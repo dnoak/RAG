@@ -11,6 +11,9 @@ class Prompt:
     role: Literal['user', 'assistant', 'connection']
     
     def content_format(self):
+        keys = list(self.content.keys())
+        if len(keys) == 1:
+            return str(self.content[keys[0]])
         return json.dumps(self.content, indent=4, ensure_ascii=False)
     
     def role_format(self):
