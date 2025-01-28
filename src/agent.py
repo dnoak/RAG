@@ -118,48 +118,52 @@ class AgentProcessor(ABC):
     #     return json.loads(response.output_text)
 
     # @abstractmethod
-    def pre_process(self, *args, **kwargs) -> dict:
-        return kwargs['input'].content
+    # def pre_process(self, *args, **kwargs) -> dict:
+    #     return kwargs['input'].content
     
     @abstractmethod
     def process(self, *args, **kwargs) -> dict:
         ...
     
     # @abstractmethod
-    def post_process(self, *args, **kwargs) -> dict:
-        return kwargs['output']
+    # def post_process(self, *args, **kwargs) -> dict:
+    #     return kwargs['output']
 
 
-@dataclass(kw_only=True)
-class LlmAgentProcessor(AgentProcessor):
-    # role: Literal['user', 'assistant', 'connection'] = 'assistant'
-    # metadata: list[ResultsMetadata] = field(default_factory=list)
+# @dataclass(kw_only=True)
+# class LlmAgentProcessor(AgentProcessor):
+#     # role: Literal['user', 'assistant', 'connection'] = 'assistant'
+#     # metadata: list[ResultsMetadata] = field(default_factory=list)
 
-    # def pre_process(self, input: dict) -> dict:
-    #     return input
+#     # def pre_process(self, input: dict) -> dict:
+#     #     return input
     
-    def process(self, *args, **kwargs) -> dict:
-        response = kwargs['llm_model'].generate(
-            system_prompt=kwargs['system_prompt'],
-            input=kwargs['input'],
-            history=kwargs['history'],
-            debug=kwargs['debug']
-        )
-        self.metadata.append(response)
-        return json.loads(response.output_text)
+#     def process(self, *args, **kwargs) -> dict:
+#         response = kwargs['llm_model'].generate(
+#             system_prompt=kwargs['system_prompt'],
+#             input=kwargs['input'],
+#             history=kwargs['history'],
+#             debug=kwargs['debug']
+#         )
+#         self.metadata.append(response)
+#         return json.loads(response.output_text)
 
-    # def post_process(self, output: dict) -> dict:
-    #     return output
+#     # def post_process(self, output: dict) -> dict:
+#     #     return output
 
 
 @dataclass(kw_only=True)
 class Agent:
     name: str
-    llm_model: Optional[LlmModel] = None
-    system_prompt: SystemPrompt
+    llm_model: Optional[LlmModel]
+    system_prompt: Optional[SystemPrompt]
     role: Literal['user', 'assistant', 'connection']
-    processor: AgentProcessor = field(default_factory=LlmAgentProcessor)
+    input_schema: type[AgentSchema]
+    output_schema: type[AgentSchema]
+    processor: Optional[AgentProcessor] = None
     graph: Optional[nx.DiGraph] = None
+    metadata: list[Any] = field(default_factory=list)
+
     # input_processor: Callable = lambda x: x
     # output_processor: Callable = lambda x: x
     # output_processor_schema: Type[AgentSchema]
@@ -178,7 +182,7 @@ class Agent:
             self.graph.add_edge(self.name, agent.name)
 
     def node_choice(self, result: Prompt, input: Prompt, debug: bool = False):
-        if not self.system_prompt.output_schema.branch():
+        if not self.output_schema.branch():
             assert len(self.connection_nodes) <= 1
             return self.connection_nodes[0].run(input=result, debug=debug)
         
@@ -190,6 +194,22 @@ class Agent:
             if connection_node.name == selected_node_name:
                 return connection_node.run(input=input, debug=debug)
         raise Exception('No connection node found')
+
+    def llm_response(
+            self, input: Prompt,
+            history: list[Prompt] = [],
+            debug: bool = False
+        ) -> dict:
+        if self.llm_model is None:
+            return {}
+        response = self.llm_model.generate(
+            system_prompt=self.system_prompt,
+            input=input,
+            history=history,
+            debug=debug
+        )
+        self.metadata.append(response)
+        return json.loads(response.output_text)
 
     def run(
             self, input: Prompt, 
@@ -203,23 +223,28 @@ class Agent:
             'debug': debug
         }
         
-        
-        input.content = self.processor.pre_process(**args)
-        
-        print(input.content)
-        print(self.system_prompt.input_schema.model_json_schema())
-        
-        assert self.system_prompt.input_schema(**input.content)
+        assert self.input_schema(**input.content)
 
-        processed = self.processor.process(**args)
-        print(processed)
+        output = None
+        if self.llm_model is not None:
+            assert self.system_prompt is not None
+            output = self.llm_response(
+                input=input,
+                history=history,
+                debug=debug
+            )
+            assert self.system_prompt.output_schema(**output)
         
-        assert self.system_prompt.output_schema(**processed)
+        if self.processor is not None:
+            output = self.processor.process(**args | {'llm_output': output})
 
-        processed = self.processor.post_process(**args | {'output': processed})
+        if output is None:
+            raise Exception('No output')
+
+        assert self.output_schema(**output)
 
         result = Prompt(
-            content=processed,
+            content=output,
             role=self.role
         )
 

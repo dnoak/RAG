@@ -12,17 +12,16 @@ class SharkClassifierInput(Responser):
     )
 
 class SharkClassifierOutput(Classifier):
-    shark_agent: Optional[bool] = Field(
+    shark_specialist: Optional[bool] = Field(
         description="Caso a interação do usuário seja relacionada a conhecimentos gerais sobre tubarões ou sobre conversas aleatórias.", 
-        title="shark_classifier"
+        # title="shark_classifier"
     )
     shark_query: Optional[bool] = Field(
         description="Caso a pergunta seja técnica e específica sobre nomes científicos de ordens, famílias, espécies, gêneros de tubarões ou os autores que fizeram estudos sobre esses tubarões",
-        title="shark_query"
+        # title="shark_query"
     )
 
 shark_choice_sys_prompt = SystemPrompt(
-    input_schema=SharkClassifierInput,
     background='Você é um assistente especialista em classificar perguntas sobre tubarões que responde sempre no formato JSON.',
     steps=[
         'Você irá classificar o tipo da pergunta do usuário com base nas informações da pergunta dele',
@@ -38,5 +37,7 @@ def shark_classifier(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_choice_sys_prompt,
         role='connection',
+        input_schema=SharkClassifierInput,
+        output_schema=SharkClassifierOutput,
         graph=graph
     )

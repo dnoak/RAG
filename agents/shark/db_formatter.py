@@ -6,14 +6,14 @@ from src.llm.gpt import GptLlmApi
 from models.agents import Responser, Classifier
 import networkx as nx
 import json
-from src.agent import AgentProcessor, LlmAgentProcessor
+from src.agent import AgentProcessor
 
 class SharkDatabaseInput(Responser):
     input: str = Field(
         description="A pergunta exata o que o usuário perguntou"
     )
 
-class SharkDatabaseOutput(Responser):
+class SharkPromptDatabaseOutput(Responser):
     order: Optional[str] = Field(
         description="O nome da ordem de tubarões"
     )
@@ -33,8 +33,13 @@ class SharkDatabaseOutput(Responser):
         description="O nome comum da espécie do tubarão"
     )
 
-class SharkDatabaseProcessor(LlmAgentProcessor):
-    def post_process(self, *args, **kwargs) -> dict:
+class SharkDatabaseOutput(Responser):
+    input: Optional[str] = Field(
+        description="Resposta da pergunta sobre tubarões" 
+    )
+
+class SharkDatabaseProcessor(AgentProcessor):
+    def process(self, *args, **kwargs) -> dict:
         with open('data/wiki/sharks/sharks.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
         data = data[:3]
@@ -43,13 +48,12 @@ class SharkDatabaseProcessor(LlmAgentProcessor):
         return {'input': prompt}
 
 shark_query_prompt = SystemPrompt(
-    input_schema=SharkDatabaseInput,
     background='Você é um assistente especialista que responde perguntas do usuário com base nas respostas de um banco de dados de tubarões e responde no formato JSON.',
     steps=[
         'responda estritamente apenas se a resposta da pergunta estiver contida no banco de dados de tubarões',
         'caso a resposta não seja encontrada, responda que a resposta não foi encontrada no banco de dados de tubarões',
     ],
-    output_schema=SharkDatabaseOutput
+    output_schema=SharkPromptDatabaseOutput
 )
 
 def shark_db_formatter(graph: Optional[nx.DiGraph] = None):
@@ -58,6 +62,8 @@ def shark_db_formatter(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_query_prompt,
         role='assistant',
+        input_schema=SharkDatabaseInput,
+        output_schema=SharkDatabaseOutput,
         processor=SharkDatabaseProcessor(),
         graph=graph
     )

@@ -1,25 +1,26 @@
 from src.prompts import Prompt
 from src.agent import Agent
-from agents.emoji_shark import SHARK_SYS_PROMPT, SHARK_EMOJI
 from src.llm.gpt import GptLlmApi
 import matplotlib.pyplot as plt
 import networkx as nx
+from agents.shark.input_loop import shark_input_loop
 from agents.shark.classifier import shark_classifier
 from agents.shark.specialist import shark_specialist_unformatted
 from agents.shark.emojifier import shark_emojifier
 from agents.shark.db_formatter import shark_db_formatter
-from agents.shark.input_loop import shark_input_loop
 
 G = nx.DiGraph()
 
 loop = shark_input_loop(G)
 classifier = shark_classifier(G)
 specialist = shark_specialist_unformatted(G)
-emojifier = shark_emojifier(G)
 db_formatter = shark_db_formatter(G)
+emojifier = shark_emojifier(G)
 
 
 # graph #
+
+
 
 loop.connect_node(classifier)
 
@@ -33,18 +34,18 @@ specialist.connect_node(emojifier)
 emojifier.connect_node(loop)
 
 
-# plt.figure(figsize=(10, 7))
-# nx.draw(G, with_labels=True, node_color="lightblue")
-# plt.show()
+plt.figure(figsize=(10, 7))
+nx.draw(G, with_labels=True, node_color="lightblue")
+plt.show()
 
 
-loop.run(
+print(loop.run(
     input=Prompt(
         content={'formatted_output': 'Fale o nome do autor que descobriu o Squatina aculeata'},
         role='user'
     ), 
     debug=True
-)
+))
 
 
 

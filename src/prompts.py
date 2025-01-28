@@ -24,7 +24,7 @@ class Prompt:
 
 @dataclass
 class SystemPrompt:
-    input_schema: Type[AgentSchema]
+    # input_schema: Type[AgentSchema]
     background: str
     steps: list[str]
     output_schema: Type[AgentSchema]

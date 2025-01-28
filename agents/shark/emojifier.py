@@ -17,7 +17,6 @@ class SharkEmojifierOutput(Responser):
     )
 
 shark_emojifier_prompt = SystemPrompt(
-    input_schema=SharkEmojifierInput,
     background='Você é um formatador de texto que insere muitos emojis com uma temática específica. Sua única tarefa é adicionar emojis de fundo do mar com a temática de tubarões a textos fornecidos, sem interpretar, alterar o conteúdo ou responder perguntas.', 
     steps=[
         'Formate o texto inserindo emojis do fundo do mar e tubarões, mantendo o significado original do texto.',
@@ -33,5 +32,7 @@ def shark_emojifier(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_emojifier_prompt,
         role='assistant',
+        input_schema=SharkEmojifierInput,
+        output_schema=SharkEmojifierOutput,
         graph=graph
     )
