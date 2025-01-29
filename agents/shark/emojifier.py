@@ -3,17 +3,17 @@ from pydantic import Field
 from src.prompts import SystemPrompt
 from src.agent import Agent
 from src.llm.gpt import GptLlmApi
-from models.agents import Responser, Classifier
+from models.agents import Responder, Classifier
 import networkx as nx
 
-class SharkEmojifierInput(Responser):
+class SharkEmojifierInput(Responder):
     output: str = Field(
         description="Pergunta não formatada" 
     )
 
-class SharkEmojifierOutput(Responser):
+class SharkEmojifierOutput(Responder):
     formatted_output: str = Field(
-        description="Resposta formatada com emojis do fundo do mar",
+        description="Resposta idêntica com formatação de emojis do fundo do mar",
     )
 
 shark_emojifier_prompt = SystemPrompt(

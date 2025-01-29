@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Literal, Optional, Type
+
+from termcolor import colored
 from src.prompts import SystemPrompt, Prompt
 from models.ml import LlmModel
 from models.llm import ResultsMetadata
@@ -172,7 +174,6 @@ class Agent:
 
     def __post_init__(self):
         self.connection_nodes: list[Agent] = []
-        # self.graph = nx.DiGraph()
         if self.graph is not None:
             self.graph.add_node(self.name)
 
@@ -222,7 +223,6 @@ class Agent:
             'history': history, 
             'debug': debug
         }
-        
         assert self.input_schema(**input.content)
 
         output = None
@@ -240,7 +240,9 @@ class Agent:
 
         if output is None:
             raise Exception('No output')
-
+        
+        # print(colored(json.dumps(output, indent=4, ensure_ascii=False), color='yellow', attrs=['bold']))
+        # print(colored(json.dumps(self.output_schema.model_json_schema(), indent=4, ensure_ascii=False), color='green', attrs=['bold']))
         assert self.output_schema(**output)
 
         result = Prompt(

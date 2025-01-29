@@ -7,14 +7,16 @@ from agents.shark.input_loop import shark_input_loop
 from agents.shark.classifier import shark_classifier
 from agents.shark.specialist import shark_specialist_unformatted
 from agents.shark.emojifier import shark_emojifier
-from agents.shark.db_formatter import shark_db_formatter
+from agents.shark.query_response import shark_query_responder
+from agents.shark.query_formatter import shark_query_formatter
 
 G = nx.DiGraph()
 
-loop = shark_input_loop(G)
+loop = shark_input_loop(G) 
 classifier = shark_classifier(G)
 specialist = shark_specialist_unformatted(G)
-db_formatter = shark_db_formatter(G)
+query_formatter = shark_query_formatter(G)
+query_responder = shark_query_responder(G)
 emojifier = shark_emojifier(G)
 
 
@@ -22,24 +24,25 @@ emojifier = shark_emojifier(G)
 loop.connect_node(classifier)
 
 classifier.connect_node(specialist)
-classifier.connect_node(db_formatter)
+classifier.connect_node(query_formatter)
 
-db_formatter.connect_node(specialist)
+query_formatter.connect_node(query_responder)
+query_responder.connect_node(emojifier)
 
 specialist.connect_node(emojifier)
 
 emojifier.connect_node(loop)
 
 
-plt.figure(figsize=(10, 7))
-g_pos = nx.spring_layout(G)
-color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
-nx.draw_networkx(
-    G=G, pos=g_pos, with_labels=True,
-    node_size=6000, font_size=10, 
-    node_color=color_map
-)
-plt.show()
+# plt.figure(figsize=(10, 7))
+# g_pos = nx.spring_layout(G)
+# color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
+# nx.draw_networkx(
+#     G=G, pos=g_pos, with_labels=True,
+#     node_size=6000, font_size=10, 
+#     node_color=color_map
+# )
+# plt.show()
 
 
 print(loop.run(

@@ -3,16 +3,16 @@ from pydantic import Field
 from src.prompts import SystemPrompt
 from src.agent import Agent
 from src.llm.gpt import GptLlmApi
-from models.agents import Responser, Classifier
+from models.agents import Responder, Classifier
 from src.agent import AgentProcessor
 import networkx as nx
 
-class SharkAgentInput(Responser):
+class SharkAgentInput(Responder):
     formatted_output: str = Field(
         description="Pergunta sobre tubarões"
     )
 
-class SharkAgentOutput(Responser):
+class SharkAgentOutput(Responder):
     input: str = Field(
         description="Resposta da pergunta sobre tubarões" 
     )

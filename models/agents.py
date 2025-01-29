@@ -6,7 +6,7 @@ class AgentSchema(ABC, BaseModel):
     def branch(*args, **kwargs):
         ...
 
-class Responser(AgentSchema):#, extra='forbid'):
+class Responder(AgentSchema):#, extra='forbid'):
     @classmethod
     def branch(cls):
         return False

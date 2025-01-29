@@ -1,36 +1,53 @@
-import networkx as nx
-import matplotlib.pyplot as plt
+import requests
 
-class Node:
-    graph = nx.DiGraph()  # Grafo compartilhado entre todas as instâncias
+def buscar_wikipedia(termo):
+    """Busca o primeiro resultado da Wikipedia e retorna o título e o link."""
+    url = "https://pt.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "list": "search",
+        "srsearch": termo
+    }
 
-    def __init__(self, name):
-        self.name = name
-        Node.graph.add_node(self.name)  # Adiciona o nó ao grafo
+    response = requests.get(url, params=params)
+    data = response.json()
 
-    def connect(self, other):
-        """Conecta este nó a outro nó."""
-        if isinstance(other, Node):
-            Node.graph.add_edge(self.name, other.name)  # Cria a aresta no grafo
-        else:
-            raise TypeError("A conexão deve ser feita com outro objeto Node.")
+    if "query" in data and "search" in data["query"]:
+        titulo_pagina = data["query"]["search"][0]["title"]
+        link = f"https://pt.wikipedia.org/wiki/{titulo_pagina.replace(' ', '_')}"
+        return titulo_pagina, link
+    else:
+        return None, None
 
-    @classmethod
-    def plot_graph(cls):
-        """Plota o grafo atual."""
-        plt.figure(figsize=(10, 7))
-        nx.draw(cls.graph, with_labels=True, node_color="lightblue", font_size=10, font_weight="bold", node_size=2000)
-        plt.show()
+def obter_texto_wikipedia(titulo_pagina):
+    """Obtém o texto completo do artigo da Wikipedia."""
+    url = "https://pt.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "prop": "extracts",
+        "explaintext": True,  # Apenas texto puro
+        "titles": titulo_pagina
+    }
 
-# Criação dos nós
-node_a = Node("A")
-node_b = Node("B")
-node_c = Node("C")
+    response = requests.get(url, params=params)
+    data = response.json()
 
-# Criação das conexões
-node_a.connect(node_b)
-node_b.connect(node_c)
-node_c.connect(node_a)
+    pages = data.get("query", {}).get("pages", {})
+    for page_id, page_data in pages.items():
+        if "extract" in page_data:
+            return page_data["extract"]
 
-# Plotando o grafo
-Node.plot_graph()
+    return "Texto não encontrado."
+
+# Teste com um termo de pesquisa
+termo_pesquisa = "mako tubarao"
+titulo, link = buscar_wikipedia(termo_pesquisa)
+
+if titulo:
+    print(f"Página encontrada: {link}\n")
+    texto_completo = obter_texto_wikipedia(titulo)
+    print(texto_completo[:1000])  # Exibir apenas os primeiros 1000 caracteres para evitar muito texto
+else:
+    print("Nenhum resultado encontrado.")
