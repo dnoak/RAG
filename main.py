@@ -19,9 +19,6 @@ emojifier = shark_emojifier(G)
 
 
 # graph #
-
-
-
 loop.connect_node(classifier)
 
 classifier.connect_node(specialist)
@@ -35,7 +32,13 @@ emojifier.connect_node(loop)
 
 
 plt.figure(figsize=(10, 7))
-nx.draw(G, with_labels=True, node_color="lightblue")
+g_pos = nx.spring_layout(G)
+color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
+nx.draw_networkx(
+    G=G, pos=g_pos, with_labels=True,
+    node_size=6000, font_size=10, 
+    node_color=color_map
+)
 plt.show()
 
 
