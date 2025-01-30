@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from src.prompts import Prompt
 from src.agent import Agent
@@ -53,18 +54,19 @@ def io_formatter(output_schema):
     return json.dumps(output_dict, indent=4, ensure_ascii=False)
 
 
-# plt.figure(figsize=(10, 7))
-# g_pos = nx.spring_layout(G)
-# color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
-# # labels = {
-# #     node: f'{node}\ninput:\n{io_formatter(data["input"])}\noutput:\n{io_formatter(data["output"])}'
-# #     for node, data in G.nodes(data=True)
-# # }
-# nx.draw_networkx(
-#     G=G, pos=g_pos, with_labels=True,
-#     node_size=6000, font_size=10, 
-#     node_color=color_map,# labels=labels,
-# )
+plt.figure(figsize=(10, 7))
+g_pos = nx.circular_layout(G)
+# g_pos = nx.spring_layout(G, k=5/math.sqrt(G.order()), iterations=100)
+color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
+# labels = {
+#     node: f'{node}\ninput:\n{io_formatter(data["input"])}\noutput:\n{io_formatter(data["output"])}'
+#     for node, data in G.nodes(data=True)
+# }
+nx.draw_networkx(
+    G=G, pos=g_pos, with_labels=True,
+    node_size=3000, font_size=10, 
+    node_color=color_map,# labels=labels,
+)
 plt.show()
 
 
