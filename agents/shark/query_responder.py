@@ -30,10 +30,10 @@ shark_query_prompt = SystemPrompt(
 
 def shark_query_responder(graph: Optional[nx.DiGraph] = None):
     return Agent(
-        name='shark_query_Responder',
+        name='shark_query_responder',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_query_prompt,
-        role='assistant',
+        role='user',
         input_schema=SharkDatabaseResponderInput,
         output_schema=SharkDatabaseResponderOutput,
         graph=graph

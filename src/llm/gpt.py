@@ -41,6 +41,7 @@ class GptLlmApi(models.ml.LlmModel):
         dict_messages = [{'role': h.role_format(), 'content': h.content_format()} for h in history]
         dict_messages += [{'role': input.role_format(), 'content': input.content_format()}]
         dict_messages += [{'role': system_prompt.role, 'content': system_prompt.content}]
+        
         response =  self.openai_client.chat.completions.create(
             messages=dict_messages, # type: ignore
             model=self.model_name,

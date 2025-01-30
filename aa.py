@@ -20,14 +20,15 @@ def buscar_wikipedia(termo):
     else:
         return None, None
 
-def obter_texto_wikipedia(titulo_pagina):
-    """Obtém o texto completo do artigo da Wikipedia."""
+def obter_primeiro_paragrafo_wikipedia(titulo_pagina):
+    """Obtém o primeiro parágrafo do artigo da Wikipedia."""
     url = "https://pt.wikipedia.org/w/api.php"
     params = {
         "action": "query",
         "format": "json",
         "prop": "extracts",
         "explaintext": True,  # Apenas texto puro
+        "exintro": True,  # Obtém apenas a introdução (geralmente o primeiro parágrafo)
         "titles": titulo_pagina
     }
 
@@ -47,7 +48,7 @@ titulo, link = buscar_wikipedia(termo_pesquisa)
 
 if titulo:
     print(f"Página encontrada: {link}\n")
-    texto_completo = obter_texto_wikipedia(titulo)
-    print(texto_completo[:1000])  # Exibir apenas os primeiros 1000 caracteres para evitar muito texto
+    primeiro_paragrafo = obter_primeiro_paragrafo_wikipedia(titulo)
+    print(primeiro_paragrafo)  # Exibir o primeiro parágrafo
 else:
     print("Nenhum resultado encontrado.")

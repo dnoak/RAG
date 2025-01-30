@@ -12,7 +12,7 @@ class SharkEmojifierInput(Responder):
     )
 
 class SharkEmojifierOutput(Responder):
-    formatted_output: str = Field(
+    loop_output: str = Field(
         description="Resposta idêntica com formatação de emojis do fundo do mar",
     )
 

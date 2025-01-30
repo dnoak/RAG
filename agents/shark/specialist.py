@@ -13,7 +13,7 @@ class SharkSpecialistAgentInput(Responder):
 
 class SharkSpecialistAgentOutput(Responder):
     output: str = Field(
-        description="Resposta da pergunta sobre tubarões" 
+        description="Resposta da pergunta sobre tubarões ou da interação com o usuário" 
     )
 
 shark_specialist_prompt = SystemPrompt(
@@ -24,7 +24,7 @@ shark_specialist_prompt = SystemPrompt(
     output_schema=SharkSpecialistAgentOutput
 )
 
-def shark_specialist_unformatted(graph: Optional[nx.DiGraph] = None):
+def shark_specialist(graph: Optional[nx.DiGraph] = None):
     return Agent(
         name='shark_specialist',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),

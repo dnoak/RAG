@@ -18,7 +18,7 @@ class Prompt:
     
     def role_format(self):
         if self.role == 'connection':
-            return 'assistant'
+            return 'user'
         return self.role
     
 

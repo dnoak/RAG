@@ -9,7 +9,6 @@ import json
 from src.agent import AgentProcessor
 from db.shark.elastic import ElasticShark
 
-
 class SharkDatabaseQueryFormatterInput(Responder):
     input: str = Field(
         description="A pergunta que o usuário fez"
@@ -49,17 +48,19 @@ class SharkDatabaseQueryFormatterProcessor(AgentProcessor):
     )
 
     def process(self, *args, **kwargs) -> dict:
-        # filter None
         max_results = 3
-        query = { k: v for k, v in kwargs['llm_output'].items() if v is not None }
-        data = self.db.search(filters=query, size=max_results)
-        data = [json.dumps(shark, indent=2, ensure_ascii=False) for shark in data]
-        data = '\n'.join(data)
+        query = { k: v for k, v in kwargs['llm_output'].items() if v is not None}
+        if query:
+            data = self.db.search(filters=query, size=max_results)
+            data = [json.dumps(shark, indent=2, ensure_ascii=False) for shark in data]
+            data = '\n'.join(data)
+        else:
+            data = 'Nenhum resultado encontrado'
         prompt = f"[user input]\n{kwargs['input'].content['input']}\n\n"
         prompt += f"[shark database - Top {max_results} resultados]\n" + data 
 
         return {
-            'db_formatted_results': prompt,
+            "db_formatted_results": prompt,
         }
 
 shark_query_prompt = SystemPrompt(
@@ -73,7 +74,7 @@ shark_query_prompt = SystemPrompt(
 
 def shark_query_formatter(graph: Optional[nx.DiGraph] = None):
     return Agent(
-        name='shark_query',
+        name='shark_query_formatter',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_query_prompt,
         role='assistant',

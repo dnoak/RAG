@@ -8,7 +8,7 @@ from src.agent import AgentProcessor
 import networkx as nx
 
 class SharkAgentInput(Responder):
-    formatted_output: str = Field(
+    loop_output: str = Field(
         description="Pergunta sobre tubarões"
     )
 

@@ -13,20 +13,22 @@ class SharkClassifierInput(Responder):
 
 class SharkClassifierOutput(Classifier):
     shark_specialist: Optional[bool] = Field(
-        description="Caso a interação do usuário seja relacionada a conhecimentos gerais sobre tubarões ou sobre conversas aleatórias.", 
-        # title="shark_classifier"
+        description="Caso a interação do usuário seja relacionada a conhecimentos gerais sobre tubarões ou sobre conversas aleatórias como saudações e apresentações.", 
     )
-    shark_query: Optional[bool] = Field(
+    shark_query_formatter: Optional[bool] = Field(
         description="Caso a pergunta seja técnica e específica sobre nomes científicos de ordens, famílias, espécies, gêneros de tubarões ou os autores que fizeram estudos sobre esses tubarões",
-        # title="shark_query"
+    )
+    shark_wikipedia: Optional[bool] = Field(
+        description="Caso o usuário fale para fazer uma pesquisa na internet ou diretamente na wikipedia, ou quando o usuário usa a tag #wikipedia ou #wiki dentro da sua pergunta",
     )
 
 shark_choice_sys_prompt = SystemPrompt(
     background='Você é um assistente especialista em classificar perguntas sobre tubarões que responde sempre no formato JSON.',
     steps=[
         'Você irá classificar o tipo da pergunta do usuário com base nas informações da pergunta dele',
-        'Voce responderá em booleano e classificará apenas uma das escolhas como `true` (pelo menos uma das escolhas deve ser `true`)',
-        'as outras escolhas você classificará como `false`',
+        'Voce responderá em booleano e classificará **APENAS UMA** das escolhas como `true`',
+        'todas as outras escolhas restantes você classificará como `false`',
+        '**NUNCA** deixe de responder uma das escolhas como `true`',
     ],
     output_schema=SharkClassifierOutput
 )
