@@ -64,6 +64,7 @@ color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in
 # }
 nx.draw_networkx(
     G=G, pos=g_pos, with_labels=True,
+    arrows=True, arrowsize=30,
     node_size=3000, font_size=10, 
     node_color=color_map,# labels=labels,
 )
