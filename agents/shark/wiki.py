@@ -52,7 +52,7 @@ class WikipediaSearcher:
 
 
 class SharkWikipediaInput(Responder):
-    input: str = Field(
+    user_input: str = Field(
         description="A pergunta que o usuário fez"
     )
 
@@ -62,7 +62,7 @@ class SharkPromptWikipediaOutput(Responder):
     )
 
 class SharkWikipediaOutput(Responder):
-    loop_output: str = Field(
+    output: str = Field(
         description="Introdução da Wikipédia sobre o assunto" 
     )
 
@@ -75,8 +75,9 @@ class SharkWikipediaProcessor(AgentProcessor):
         if results is None:
             return {'output': 'Nenhuma página encontrada'}
         page_title, page_url = results
-        introduction = self.searcher.get_introduction(page_title)
-        return {'loop_output': introduction}
+        introduction = f"Página encontrada: {page_url}\n\n"
+        introduction += self.searcher.get_introduction(page_title)
+        return {'output': introduction}
         
 shark_wikipedia_prompt = SystemPrompt(
     background='Você é um assistente especialista em fazer queries de busca de páginas da Wikipedia e sempre responde no formato JSON.',
@@ -91,7 +92,7 @@ def shark_wikipedia(graph: Optional[nx.DiGraph] = None):
         name='shark_wikipedia',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_wikipedia_prompt,
-        role='assistant',
+        role='user:connection',
         input_schema=SharkWikipediaInput,
         output_schema=SharkWikipediaOutput,
         processor=SharkWikipediaProcessor(),

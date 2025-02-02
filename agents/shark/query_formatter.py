@@ -8,9 +8,10 @@ import networkx as nx
 import json
 from src.agent import AgentProcessor
 from db.shark.elastic import ElasticShark
+import os
 
 class SharkDatabaseQueryFormatterInput(Responder):
-    input: str = Field(
+    user_input: str = Field(
         description="A pergunta que o usuário fez"
     )
 
@@ -42,21 +43,22 @@ class SharkDatabaseQueryFormatterOutput(Responder):
 class SharkDatabaseQueryFormatterProcessor(AgentProcessor):
     db: ElasticShark = ElasticShark(
         index='shark_index',
-        hosts='https://localhost:9200',
-        basic_auth=('elastic', '+bp8O9L5xyjKMDr*KUix'),
+        hosts=os.environ['ELASTIC_HOST'],
+        basic_auth=(os.environ['ELASTIC_USER'], os.environ['ELASTIC_PASSWORD']),
         verify_certs=False,
     )
 
     def process(self, *args, **kwargs) -> dict:
         max_results = 3
         query = { k: v for k, v in kwargs['llm_output'].items() if v is not None}
+        print(query)
         if query:
             data = self.db.search(filters=query, size=max_results)
             data = [json.dumps(shark, indent=2, ensure_ascii=False) for shark in data]
             data = '\n'.join(data)
         else:
             data = 'Nenhum resultado encontrado'
-        prompt = f"[user input]\n{kwargs['input'].content['input']}\n\n"
+        prompt = f"[user input]\n{kwargs['input'].content['user_input']}\n\n"
         prompt += f"[shark database - Top {max_results} resultados]\n" + data 
 
         return {

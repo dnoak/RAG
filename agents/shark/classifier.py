@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import Field
 from src.prompts import SystemPrompt
-from src.agent import Agent
+from src.agent import Agent, AgentProcessor
 from src.llm.gpt import GptLlmApi
 from models.agents import Responder, Classifier
 import networkx as nx
@@ -11,7 +11,7 @@ class SharkClassifierInput(Responder):
         description="Resposta da pergunta sobre tubarões"
     )
 
-class SharkClassifierOutput(Classifier):
+class SharkPromptClassifierOutput(Classifier):
     shark_specialist: Optional[bool] = Field(
         description="Caso a interação do usuário seja relacionada a conhecimentos gerais sobre tubarões ou sobre conversas aleatórias como saudações e apresentações.", 
     )
@@ -22,6 +22,20 @@ class SharkClassifierOutput(Classifier):
         description="Caso o usuário fale para fazer uma pesquisa na internet ou diretamente na wikipedia, ou quando o usuário usa a tag #wikipedia ou #wiki dentro da sua pergunta",
     )
 
+class SharkClassifierOutput(Classifier):
+    user_input: str = Field(
+        description="A pergunta que o usuário fez"
+    )
+
+class SharkClassifierProcessor(AgentProcessor):
+    def process(self, *args, **kwargs) -> dict:
+        query = {k: v for k, v in kwargs['llm_output'].items() if v}
+        user_input = {'user_input': kwargs['input'].content['input']}
+        if not query:
+            return {Classifier.connection_type(): 'shark_specialist'} | user_input
+        assert len(query) == 1, query
+        return {Classifier.connection_type(): list(query.keys())[0]} | user_input
+
 shark_choice_sys_prompt = SystemPrompt(
     background='Você é um assistente especialista em classificar perguntas sobre tubarões que responde sempre no formato JSON.',
     steps=[
@@ -30,7 +44,7 @@ shark_choice_sys_prompt = SystemPrompt(
         'todas as outras escolhas restantes você classificará como `false`',
         '**NUNCA** deixe de responder uma das escolhas como `true`',
     ],
-    output_schema=SharkClassifierOutput
+    output_schema=SharkPromptClassifierOutput
 )
 
 def shark_classifier(graph: Optional[nx.DiGraph] = None):
@@ -38,8 +52,9 @@ def shark_classifier(graph: Optional[nx.DiGraph] = None):
         name='shark_classifier',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_choice_sys_prompt,
-        role='connection',
+        role='user:connection',
         input_schema=SharkClassifierInput,
         output_schema=SharkClassifierOutput,
+        processor=SharkClassifierProcessor(),
         graph=graph
     )

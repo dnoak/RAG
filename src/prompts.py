@@ -8,23 +8,26 @@ import json
 @dataclass
 class Prompt:
     content: dict
-    role: Literal['user', 'assistant', 'connection']
+    role: Literal['user', 'assistant', 'user:connection']
     
-    def content_format(self):
-        keys = list(self.content.keys())
+    def content_format(self, show_connection_type: bool = False):
+        if not show_connection_type:
+            valid_content = {k: v for k, v in self.content.items() if not k.startswith('__')}
+        else:
+            valid_content = self.content
+        keys = list(valid_content.keys())
         if len(keys) == 1:
-            return str(self.content[keys[0]])
-        return json.dumps(self.content, indent=4, ensure_ascii=False)
+            return str(valid_content[keys[0]])
+        return json.dumps(valid_content, indent=4, ensure_ascii=False)
     
     def role_format(self):
-        if self.role == 'connection':
+        if self.role == 'user:connection':
             return 'user'
         return self.role
     
 
 @dataclass
 class SystemPrompt:
-    # input_schema: Type[AgentSchema]
     background: str
     steps: list[str]
     output_schema: Type[AgentSchema]

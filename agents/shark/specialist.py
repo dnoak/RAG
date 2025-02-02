@@ -7,7 +7,7 @@ from models.agents import Responder, Classifier
 import networkx as nx
 
 class SharkSpecialistAgentInput(Responder):
-    input: str = Field(
+    user_input: str = Field(
         description="Pergunta sobre tubarões"
     )
 
@@ -31,6 +31,6 @@ def shark_specialist(graph: Optional[nx.DiGraph] = None):
         system_prompt=shark_specialist_prompt,
         input_schema=SharkSpecialistAgentInput,
         output_schema=SharkSpecialistAgentOutput,
-        role='connection',
+        role='user:connection',
         graph=graph
     )

@@ -15,7 +15,7 @@ class SharkDatabaseResponderInput(Responder):
     )
 
 class SharkDatabaseResponderOutput(Responder):
-    output: Optional[str] = Field(
+    output: str = Field(
         description="Resposta da pergunta sobre tubarões" 
     )
 

@@ -3,7 +3,7 @@ from pydantic import Field
 from src.prompts import SystemPrompt
 from src.agent import Agent
 from src.llm.gpt import GptLlmApi
-from models.agents import Responder, Classifier
+from models.agents import Responder
 import networkx as nx
 
 class SharkEmojifierInput(Responder):

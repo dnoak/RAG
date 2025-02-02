@@ -14,7 +14,7 @@ class SharkAgentInput(Responder):
 
 class SharkAgentOutput(Responder):
     input: str = Field(
-        description="Resposta da pergunta sobre tubarões" 
+        description="Pergunta sobre tubarões" 
     )
 
 class SharkAgentProcessor(AgentProcessor):
@@ -26,7 +26,7 @@ def shark_input_loop(graph: Optional[nx.DiGraph] = None):
         name='shark_input_loop',
         llm_model=None,
         system_prompt=None,
-        role='connection',
+        role='user',
         input_schema=SharkAgentInput,
         output_schema=SharkAgentOutput,
         processor=SharkAgentProcessor(),

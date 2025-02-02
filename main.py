@@ -16,7 +16,7 @@ from agents.shark.query_responder import shark_query_responder
 
 G = nx.DiGraph()
 
-loop = shark_input_loop(G) 
+loop = shark_input_loop(G)
 classifier = shark_classifier(G)
 specialist = shark_specialist(G)
 query_formatter = shark_query_formatter(G)
@@ -34,12 +34,11 @@ classifier.connect_node(wiki)
 
 query_formatter.connect_node(query_responder)
 query_responder.connect_node(emojifier)
+wiki.connect_node(emojifier)
 
 specialist.connect_node(emojifier)
 
 emojifier.connect_node(loop)
-
-wiki.connect_node(loop)
 
 
 def io_formatter(output_schema):
@@ -53,22 +52,21 @@ def io_formatter(output_schema):
         output_dict[type_key] = f"{type_value}"
     return json.dumps(output_dict, indent=4, ensure_ascii=False)
 
-
-plt.figure(figsize=(10, 7))
-g_pos = nx.circular_layout(G)
-# g_pos = nx.spring_layout(G, k=5/math.sqrt(G.order()), iterations=100)
-color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
-# labels = {
-#     node: f'{node}\ninput:\n{io_formatter(data["input"])}\noutput:\n{io_formatter(data["output"])}'
-#     for node, data in G.nodes(data=True)
-# }
-nx.draw_networkx(
-    G=G, pos=g_pos, with_labels=True,
-    arrows=True, arrowsize=30,
-    node_size=3000, font_size=10, 
-    node_color=color_map,# labels=labels,
-)
-plt.show()
+# plt.figure(figsize=(10, 7))
+# g_pos = nx.circular_layout(G)
+# # g_pos = nx.spring_layout(G, k=5/math.sqrt(G.order()), iterations=100)
+# color_map = ['tomato' if node == 'shark_input_loop' else 'lightblue' for node in G]
+# # labels = {
+# #     node: f'{node}\ninput:\n{io_formatter(data["input"])}\noutput:\n{io_formatter(data["output"])}'
+# #     for node, data in G.nodes(data=True)
+# # }
+# nx.draw_networkx(
+#     G=G, pos=g_pos, with_labels=True,
+#     arrows=True, arrowsize=30,
+#     node_size=3000, font_size=10, 
+#     node_color=color_map,# labels=labels,
+# )
+# plt.show()
 
 
 print(loop.run(

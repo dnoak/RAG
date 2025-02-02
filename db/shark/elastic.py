@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 from elasticsearch import Elasticsearch, helpers
 import warnings
 import json
@@ -59,7 +60,7 @@ class ElasticShark:
                     'number_of_replicas': 2
                 }
             },
-            body=self.mapping
+            body={'mappings': self.mapping['mappings']}
         )
     
     def insert(self, shark: dict | list[dict]):
@@ -86,20 +87,22 @@ class ElasticShark:
         return [hit["_source"] for hit in response["hits"]["hits"]]
 
 
+if __name__ == '__main__':
+    elastic_shark = ElasticShark(
+        index='shark_index',
+        hosts=os.environ['ELASTIC_HOST'],
+        basic_auth=(os.environ['ELASTIC_USER'], os.environ['ELASTIC_PASSWORD']),
+        verify_certs=False,
+    )
 
+    # elastic_shark.delete_index()
+    elastic_shark.create_index()
+    with open('data/wiki/sharks/sharks.json', 'r', encoding='utf-8') as file:
+        sharks_data = json.load(file)
 
-# elastic_shark = ElasticShark(
-#     index='shark_index',
-#     hosts='https://localhost:9200',
-#     basic_auth=('elastic', '+bp8O9L5xyjKMDr*KUix'),
-#     verify_certs=False,
-# )
+    elastic_shark.insert(sharks_data)
 
-# with open('data/wiki/sharks/sharks.json', 'r', encoding='utf-8') as file:
-#     sharks_data = json.load(file)
+    # # for shark in sharks_data:
+    # s = elastic_shark.search(filters={"genus": "squatina"}, size=3)
 
-
-# # for shark in sharks_data:
-# s = elastic_shark.search(filters={"genus": "squatina"}, size=3)
-
-# [print(json.dumps(shark, indent=2, ensure_ascii=False)) for shark in s]
+    # [print(json.dumps(shark, indent=2, ensure_ascii=False)) for shark in s]
