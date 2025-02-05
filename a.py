@@ -1,19 +1,17 @@
-from pydantic import BaseModel, Field
+import functools
 
-class Test(BaseModel):
-    a: int = Field(default=1, description='a')
+class MinhaClasse:
+    def meu_decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            print(f"Executando {func.__name__} dentro de {self.__class__.__name__}")
+            return func(self, *args, **kwargs)  # Chama o método original
+        return wrapper
 
-class Test2(BaseModel):
-    a: int
+    @meu_decorator
+    def metodo(self, x):
+        print(f"Processando {x}")
 
-
-# t1 = Test(a=1)
-# t2 = Test2(a=1)
-
-assert Test.__annotations__ == Test2.__annotations__
-
-print(Test.__annotations__)
-print(Test2.__annotations__)
-
-print(Test.model_json_schema())
-print(Test2.model_json_schema())
+# Uso
+obj = MinhaClasse()
+obj.metodo(42)

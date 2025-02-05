@@ -30,7 +30,7 @@ class SharkClassifierOutput(Classifier):
 class SharkClassifierProcessor(AgentProcessor):
     def process(self, *args, **kwargs) -> dict:
         query = {k: v for k, v in kwargs['llm_output'].items() if v}
-        user_input = {'user_input': kwargs['input'].content['input']}
+        user_input = {'user_input': kwargs['input'].contents[0]['input']}
         if not query:
             return {Classifier.connection_type(): 'shark_specialist'} | user_input
         assert len(query) == 1, query
@@ -53,7 +53,7 @@ def shark_classifier(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_choice_sys_prompt,
         role='user:connection',
-        input_schema=SharkClassifierInput,
+        input_schemas=[SharkClassifierInput],
         output_schema=SharkClassifierOutput,
         processor=SharkClassifierProcessor(),
         graph=graph

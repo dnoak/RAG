@@ -32,7 +32,7 @@ def shark_emojifier(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_emojifier_prompt,
         role='assistant',
-        input_schema=SharkEmojifierInput,
+        input_schemas=[SharkEmojifierInput],
         output_schema=SharkEmojifierOutput,
-        graph=graph
+        graph=graph,
     )

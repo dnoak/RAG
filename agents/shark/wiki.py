@@ -93,7 +93,7 @@ def shark_wikipedia(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_wikipedia_prompt,
         role='user:connection',
-        input_schema=SharkWikipediaInput,
+        input_schemas=[SharkWikipediaInput],
         output_schema=SharkWikipediaOutput,
         processor=SharkWikipediaProcessor(),
         graph=graph

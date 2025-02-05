@@ -80,7 +80,7 @@ def shark_query_formatter(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_query_prompt,
         role='assistant',
-        input_schema=SharkDatabaseQueryFormatterInput,
+        input_schemas=[SharkDatabaseQueryFormatterInput],
         output_schema=SharkDatabaseQueryFormatterOutput,
         processor=SharkDatabaseQueryFormatterProcessor(),
         graph=graph

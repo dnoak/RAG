@@ -5,8 +5,14 @@ class AgentSchema(ABC, BaseModel):
     # @abstractmethod
     # def branch(*args, **kwargs):
     #     ...
+    @classmethod
+    def annotations(cls):
+        stringfy = lambda d: {k: stringfy(v) if isinstance(v, dict) else str(v) for k, v in d.items()}
+        return stringfy(cls.__annotations__)
+
+    @classmethod
     @abstractmethod
-    def connection_type(*args, **kwargs):
+    def connection_type(cls) -> str:
         ...
 
 class Responder(AgentSchema):#, extra='forbid'):
@@ -14,7 +20,7 @@ class Responder(AgentSchema):#, extra='forbid'):
     # def branch(cls):
     #     return False
     @classmethod
-    def connection_type(cls):
+    def connection_type(cls) -> str:
         return '__responder_output__'
 
 class Classifier(AgentSchema):
@@ -23,5 +29,5 @@ class Classifier(AgentSchema):
     #     return True
     
     @classmethod
-    def connection_type(cls):
+    def connection_type(cls) -> str:
         return '__classifier_output__'

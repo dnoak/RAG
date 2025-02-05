@@ -29,7 +29,7 @@ def shark_specialist(graph: Optional[nx.DiGraph] = None):
         name='shark_specialist',
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_specialist_prompt,
-        input_schema=SharkSpecialistAgentInput,
+        input_schemas=[SharkSpecialistAgentInput],
         output_schema=SharkSpecialistAgentOutput,
         role='user:connection',
         graph=graph

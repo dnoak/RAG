@@ -34,7 +34,7 @@ def shark_query_responder(graph: Optional[nx.DiGraph] = None):
         llm_model=GptLlmApi(model_name='gpt-4o-mini'),
         system_prompt=shark_query_prompt,
         role='user',
-        input_schema=SharkDatabaseResponderInput,
+        input_schemas=[SharkDatabaseResponderInput],
         output_schema=SharkDatabaseResponderOutput,
         graph=graph
     )

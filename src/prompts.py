@@ -7,18 +7,29 @@ import json
 
 @dataclass
 class Prompt:
-    content: dict
+    contents: list[dict]
     role: Literal['user', 'assistant', 'user:connection']
     
     def content_format(self, show_connection_type: bool = False):
         if not show_connection_type:
-            valid_content = {k: v for k, v in self.content.items() if not k.startswith('__')}
+            valid_contents = [
+                {k: v for k, v in content.items() if not k.startswith('__')}
+                for content in self.contents
+            ]
         else:
-            valid_content = self.content
-        keys = list(valid_content.keys())
-        if len(keys) == 1:
-            return str(valid_content[keys[0]])
-        return json.dumps(valid_content, indent=4, ensure_ascii=False)
+            valid_contents = self.contents
+        
+        formatted = []
+        for index, valid_content in enumerate(valid_contents):
+            formatted.append(f'Input [{index}]:\n')
+            keys = list(valid_content.keys())
+            if len(keys) == 1:
+                formatted.append('  ' + str(valid_content[keys[0]]) + '\n\n')
+            else:
+                formatted.append(json.dumps(valid_content, indent=4, ensure_ascii=False) + '\n\n')
+        if len(formatted) == 2:
+            return formatted[1]
+        return ''.join(formatted)
     
     def role_format(self):
         if self.role == 'user:connection':
@@ -63,21 +74,57 @@ class SystemPrompt:
         prompt += self._build_output_prompt()
         return prompt
 
+
 if __name__ == '__main__':
-    from data.prompts.system_prompts import DOLPHIN, SHARK, DOLPHIN_SPECIES, SHARK_SPECIALIST
-    import json
-    import typing
+    # test
 
-    s =  DOLPHIN_SPECIES
+    p = Prompt(
+        contents=[
+            {'output': 'saída do agente 1'},
+            {'output': 'saída do agente 2'},
+            {'output': 'saída do agente 3'},
+        ],
+        role='user'
+    )
 
-    tp = typing.get_type_hints(s.output_schema)
-    nk = {}
-    for key, value in tp.items():
-        if isinstance(value, type):
-            type_str = value.__name__
-        else:
-            type_str = str(value).replace('typing.', '')
-        nk[key] = type_str
+    p2 = Prompt(
+        contents=[
+            {'output1': 'saída do agente 1'},
+            {'output2': 'saída do agente 2'},
+            {'output3': 'saída do agente 3'},
+        ],
+        role='user'
+    )
 
-    print()
-    print(s.content)
+    p3 = Prompt(
+        contents=[
+            {'output1': 'saída do agente 1', 'output11': 'saída do agente 2'},
+            {'output2': 'saída do agente 2', 'output22': 'saída do agente 3'},
+            {'output3': 'saída do agente 3'},
+        ],
+        role='user:connection'
+    )
+
+    p4 = Prompt(
+        contents=[
+            {'output1': 'saída do agente 1'}
+        ],
+        role='user:connection'
+    )
+
+    p5 = Prompt(
+        contents=[
+            {'output1': 'saída do agente 1', 'output11': 'saída do agente 2'},
+        ],
+        role='user'
+    )
+
+    print(p.content_format())
+    print('\n\n')
+    print(p2.content_format())
+    print('\n\n')
+    print(p3.content_format())
+    print('\n\n')
+    print(p4.content_format())
+    print('\n\n')
+    print(p5.content_format())
