@@ -8,7 +8,7 @@ from termcolor import colored
 from src.prompts import SystemPrompt, Prompt
 from models.ml import LlmModel
 from models.llm import ResultsMetadata
-from models.agents import AgentSchema, Classifier, Responder
+from models.agents import AgentSchema, Classifier, Replier, Replicator
 import networkx as nx
 import json
 
@@ -76,6 +76,9 @@ class Agent:
     processor: Optional[AgentProcessor] = None
     graph: Optional[nx.DiGraph] = None
     metadata: list[Any] = field(default_factory=list)
+    debug: dict[Literal['output', 'llm'], bool] = field(
+        default_factory=lambda: {'output': False, 'llm': False}
+    )
 
     def __post_init__(self):
         self.locker = threading.Lock()
@@ -92,7 +95,8 @@ class Agent:
         self.input_schema_queue: list[type[AgentSchema]] = [
             i for i in self.input_schemas
         ]
-        self.inputs_args_queue: dict[int, dict] = {}
+        # self.inputs_args_queue: dict[int, dict] = {}
+        self.inputs_args_queue: list[dict] = []
 
     def _nodes_io(self, agent: 'Agent'):
         for index, input_schema in enumerate(agent.input_schemas): 
@@ -105,7 +109,7 @@ class Agent:
     def _wait_for_inputs(self) -> tuple[Prompt, list[Prompt]]:
         while len(self.inputs_args_queue) < len(self.input_schemas):
             time.sleep(0.1)
-        args = [i[1] for i in sorted(self.inputs_args_queue.items())]
+        args = sorted(self.inputs_args_queue, key=lambda x: x['index'])
         contents = sum([i['input'].contents for i in args], [])
         roles = [i['input'].role for i in args]
         histories = [i['history'] for i in args]
@@ -114,7 +118,7 @@ class Agent:
         return Prompt(contents=contents, role=roles[0]), histories[0]
     
     def _node_choice(self, result: Prompt, history: list[Prompt]):
-        if self.output_schema.connection_type() == Responder.connection_type():
+        if self.output_schema.connection_type() == Replier.connection_type():
             return self.output_nodes[0].run(input=result, history=history)
         elif self.output_schema.connection_type() == Classifier.connection_type():
             selected_node = result.contents[0][self.output_schema.connection_type()]
@@ -122,20 +126,23 @@ class Agent:
                 if output_node.name == selected_node:
                     return output_node.run(input=result, history=history)
             raise Exception('No connection node found')
+        elif self.output_schema.connection_type() == Replicator.connection_type():
+            return [
+                output_node.run(input=result, history=history)
+                for output_node in self.output_nodes
+            ]
         else:
             raise NotImplementedError(
                 f'Connection type {self.output_schema.connection_type()} not implemented'
             )
-            
+
     def _start_loop(self):
         while True:
             self.start()
             self._set_queues()
     
     def llm_response(
-            self, input: Prompt,
-            history: list[Prompt] = [],
-            debug: bool = False
+            self, input: Prompt, history: list[Prompt], debug: bool
         ) -> dict:
         if self.llm_model is None:
             return {}
@@ -148,8 +155,8 @@ class Agent:
         self.metadata.append(response)
         return json.loads(response.output_text)
 
-    def compile(self):
-        if self.connections_input_schema_queue:
+    def compile(self, closed_loop=True):
+        if self.connections_input_schema_queue and closed_loop:
             AgentValidationErrors.pending_connections(_self=self)
         return self
 
@@ -161,25 +168,41 @@ class Agent:
             output = self.llm_response(
                 input=input,
                 history=history,
-                debug=True
+                debug=True#self.debug['llm']
             )
             assert self.system_prompt.output_schema(**output)
-
         if self.processor:
             args = asdict(self) | {
                 'input': input, 
                 'history': history, 
             }
             output = self.processor.process(**args | {'llm_output': output})
-
+        
         if output is None:
-            raise Exception('No output')
+            raise Exception(colored(
+                f'\nAgent {self.name} must have at least a `llm_model` or a `processor` defined',
+                color='red', attrs=['bold'])
+            )
+        
         assert self.output_schema(**output)
 
         result = Prompt(
             contents=[output],
             role=self.role
         )
+        if self.debug['output']:
+            debug_colors = {
+                "system": "yellow",
+                "assistant": "green",
+                "user": "blue",
+                "user:connection": "grey",
+            }
+            if result.role != 'user':
+                return
+            print(f"\n\n{colored(f'[CHAT] - {self.name}', color='red', attrs=['bold'])}")
+            print(f"{colored(f'[{result.role}]:', color=debug_colors[result.role], attrs=['bold'])}") # type: ignore
+            print(f"{colored(result.content_format(show_connection_type=True), debug_colors[result.role])}") # type: ignore
+
         return result if not self.output_nodes else self._node_choice(result, history)
 
     def connect_node(self, agent: 'Agent'):
@@ -197,7 +220,9 @@ class Agent:
                 for content in input.contents:
                     try:
                         input_squema(**content)
-                        self.inputs_args_queue |= {index: {'input': input, 'history': history}}
+                        self.inputs_args_queue.append(
+                            {'input': input, 'history': history, 'index': index}
+                        )
                         return
                     except:
                         continue

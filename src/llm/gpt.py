@@ -26,6 +26,7 @@ debug_colors = {
 @dataclass
 class GptLlmApi(models.ml.LlmModel):
     model_name: str
+    temperature: float = 1.0
     
     def __post_init__(self):
         self.openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
@@ -47,6 +48,7 @@ class GptLlmApi(models.ml.LlmModel):
             model=self.model_name,
             max_tokens=None,
             response_format={"type": "json_object"},
+            temperature=self.temperature,
         )
 
         if debug:
@@ -67,11 +69,11 @@ class GptLlmApi(models.ml.LlmModel):
     def generate(
             self, system_prompt: SystemPrompt,
             input: Prompt,
-            history: list[Prompt], 
+            history: list[Prompt],
             debug: bool = False
         ) -> models.llm.ResultsMetadata:
         
-        result, process_time = self._timed_gpt_generate(system_prompt, input, history, debug)
+        result, process_time = self._timed_gpt_generate(system_prompt, input, history, debug) 
         
         return models.llm.ResultsMetadata(
             model_name=self.model_name,

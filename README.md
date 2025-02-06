@@ -6,3 +6,4 @@ arrumar o [user] e [assistant] com input chegando como JSON
 }
 
 
+colocar temperatura da LLM/top_p como argumento

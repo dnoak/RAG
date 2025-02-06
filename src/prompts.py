@@ -18,13 +18,12 @@ class Prompt:
             ]
         else:
             valid_contents = self.contents
-        
         formatted = []
         for index, valid_content in enumerate(valid_contents):
             formatted.append(f'Input [{index}]:\n')
             keys = list(valid_content.keys())
             if len(keys) == 1:
-                formatted.append('  ' + str(valid_content[keys[0]]) + '\n\n')
+                formatted.append(str(valid_content[keys[0]]) + '\n\n')
             else:
                 formatted.append(json.dumps(valid_content, indent=4, ensure_ascii=False) + '\n\n')
         if len(formatted) == 2:
@@ -51,9 +50,9 @@ class SystemPrompt:
         output_instructions = '\nInformações dos campos JSON:\n'	
         for schema_key, schema_value in json_schema['properties'].items():
             output_instructions += f" - {schema_key}: {schema_value['description']}\n"
-        # output_instructions += '\n'
 
-        output_instructions += '\nFormato de resposta do JSON - siga a tipagem informada:\n' 
+        output_instructions += '\nFormato de resposta do JSON - '
+        output_instructions += 'Siga a tipagem baseada no typing do Python\n'
         for type_key, type_value in type_hints.items():
             if isinstance(type_value, type):
                 type_value = type_value.__name__
