@@ -95,7 +95,6 @@ class Agent:
         self.input_schema_queue: list[type[AgentSchema]] = [
             i for i in self.input_schemas
         ]
-        # self.inputs_args_queue: dict[int, dict] = {}
         self.inputs_args_queue: list[dict] = []
 
     def _nodes_io(self, agent: 'Agent'):
@@ -183,7 +182,6 @@ class Agent:
                 f'\nAgent {self.name} must have at least a `llm_model` or a `processor` defined',
                 color='red', attrs=['bold'])
             )
-        
         assert self.output_schema(**output)
 
         result = Prompt(

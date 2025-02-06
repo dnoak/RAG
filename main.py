@@ -37,8 +37,8 @@ voter_0.connect_node(election)
 voter_1.connect_node(election)
 voter_2.connect_node(election)
 
-election.connect_node(candidate_0)
-election.connect_node(candidate_1)
+# election.connect_node(candidate_0)
+# election.connect_node(candidate_1)
 
 
 # compile
