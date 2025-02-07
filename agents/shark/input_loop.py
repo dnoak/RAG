@@ -1,10 +1,10 @@
 from typing import Optional
 from pydantic import Field
 from src.prompts import SystemPrompt
-from src.agent import Agent
+from agent import Agent
 from src.llm.gpt import GptLlmApi
 from models.agents import Responder, Classifier
-from src.agent import AgentProcessor
+from agent import AgentProcessor
 import networkx as nx
 
 class SharkAgentInput(Responder):

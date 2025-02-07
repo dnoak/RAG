@@ -2,7 +2,7 @@ import json
 import math
 import typing
 from src.prompts import Prompt
-from src.agent import Agent
+from agent import Agent
 from src.llm.gpt import GptLlmApi
 import matplotlib.pyplot as plt
 import networkx as nx

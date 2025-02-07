@@ -1,0 +1,18 @@
+digraph {
+	candidate_0 [label=candidate_0]
+	candidate_1 [label=candidate_1]
+	candidate_2 [label=candidate_2]
+	voter_0 [label=voter_0]
+	voter_1 [label=voter_1]
+	voter_2 [label=voter_2]
+	election [label=election]
+	candidate_0 -> voter_0
+	candidate_1 -> voter_0
+	candidate_0 -> voter_1
+	candidate_1 -> voter_1
+	candidate_0 -> voter_2
+	candidate_1 -> voter_2
+	voter_0 -> election
+	voter_1 -> election
+	voter_2 -> election
+}

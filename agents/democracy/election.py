@@ -5,12 +5,6 @@ from src.agent import Agent, AgentProcessor
 from src.llm.gpt import GptLlmApi
 from termcolor import colored
 from models.agents import Replier, Replicator
-import networkx as nx
-
-class ElectionInput(Replier):
-    vote: str = Field(
-        description="Voto do eleitor."
-    )
 
 class ElectionOutput(Replicator):
     winner: str = Field(
@@ -27,13 +21,12 @@ class ElectionProcessor(AgentProcessor):
         print('🔴 🟡 '*8 )
         return {'winner': ''}
 
-def election_fn(name: str, n_inputs: int, graph: Optional[nx.DiGraph] = None):
+def election_fn(name: str, graph):
     return Agent(
         name=name,
         llm_model=None,
         system_prompt=None,
         role='assistant',
-        input_schemas=[ElectionInput]*n_inputs,
         output_schema=ElectionOutput,
         processor=ElectionProcessor(),
         graph=graph,

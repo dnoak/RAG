@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from src.prompts import Prompt, SystemPrompt
-from src.agent import Agent
+from agent import Agent
 import models.llm
 
 @dataclass

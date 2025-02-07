@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import json
-from more_itertools import chunked
+import more_itertools as mit
 
 @dataclass
 class GhostDb:
@@ -18,7 +18,7 @@ class GhostDb:
     def pprint(jsonable: dict):
         print(json.dumps(jsonable, indent=4, ensure_ascii=False))
 
-    def get_formatted_posts(self, chunk_size):
+    def get_formatted_posts(self, chunk_size, p_padding: float):
         posts = [post for post in self.db['data']['posts']]
         tags = [tag for tag in self.db['data']['posts_tags']]
         tags += (len(posts) - len(tags)) * [None]
@@ -28,9 +28,12 @@ class GhostDb:
         for post in posts:
             if post['plaintext'] is None:
                 continue
-            plaintext = list(chunked(post['plaintext'].split(), chunk_size))
-            plaintext = [' '.join(p) for p in plaintext]
-
+            plaintext = list(mit.windowed(
+                seq=post['plaintext'].split(), 
+                n=chunk_size,
+                step=int(chunk_size * (1 - p_padding)),
+            ))
+            plaintext = [' '.join(p) for p in [list(filter(None, w)) for w in plaintext]]
 
             formatted_post[post['id']] = {
                 'id': post['id'],
@@ -50,4 +53,4 @@ class GhostDb:
 g = GhostDb('data/coins/collectprime-blog.ghost.2025-02-02-15-47-58.json')
 
 for i in range(1):
-    g.pprint(g.get_formatted_posts(200)[i]['plaintext'])
+    g.pprint(g.get_formatted_posts(10, 0.3)[i]['plaintext'])

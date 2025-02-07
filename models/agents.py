@@ -1,5 +1,15 @@
 from pydantic import BaseModel
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any
+
+@dataclass(kw_only=True)
+class AgentProcessor(ABC):
+    metadata: list[Any] = field(default_factory=list)
+
+    @abstractmethod
+    def process(self, *args, **kwargs) -> dict:
+        ...
 
 class AgentSchema(ABC, BaseModel):
     @classmethod

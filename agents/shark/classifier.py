@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import Field
 from src.prompts import SystemPrompt
-from src.agent import Agent, AgentProcessor
+from agent import Agent, AgentProcessor
 from src.llm.gpt import GptLlmApi
 from models.agents import Responder, Classifier
 import networkx as nx

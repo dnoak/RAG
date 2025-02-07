@@ -3,67 +3,14 @@ from dataclasses import dataclass, field, asdict
 import functools
 import threading
 import time
-from typing import Any, Callable, Literal, Optional, Type
+from typing import Any, Literal, Optional, Type
 from termcolor import colored
 from src.prompts import SystemPrompt, Prompt
 from models.ml import LlmModel
-from models.llm import ResultsMetadata
-from models.agents import AgentSchema, Classifier, Replier, Replicator
-import networkx as nx
+from models.agents import AgentSchema, AgentProcessor, Classifier, Replier, Replicator
+import random
 import json
-
-@dataclass(kw_only=True)
-class AgentValidationErrors:
-    @staticmethod
-    def nodes_io_mismatch(_self: 'Agent', agent: 'Agent'):
-        exception = colored(
-            f"\n{'❌ '*24}\n{agent.name} INPUTs schemas must have the {_self.name} OUTPUT schema",
-            color='yellow', attrs=['bold']
-        )
-        exception += colored(f"\n[Output]: Agent {_self.name}", color='red', attrs=['bold'])
-        dumped = json.dumps(_self.output_schema.annotations(), indent=4, ensure_ascii=False)
-        exception += colored(f"\n{dumped}", color='red')
-        exception += colored(f"\n[Inputs]: Agent {agent.name}", color='green', attrs=['bold'])
-        dumped = json.dumps(
-            [i.annotations() for i in agent.connections_input_schema_queue], 
-            indent=4, ensure_ascii=False)
-        exception += colored(f"\n{dumped}", color='green')
-        raise Exception(exception)
-    
-    @staticmethod
-    def pending_connections(_self: 'Agent'):
-        exception = colored(
-            f"\n{'❌ '*12}\nConnections not completed in agent {_self.name}",
-            color='yellow', attrs=['bold']
-        )
-        exception += colored(f"\n[Pending connections]: agent {_self.name}", color='red', attrs=['bold'])
-        dumped = json.dumps(
-            [i.annotations() for i in _self.connections_input_schema_queue], 
-            indent=4, ensure_ascii=False)
-        exception += colored(f"\n{dumped}", color='red')
-        raise Exception(exception)
-    
-    @staticmethod
-    def no_schema_found(_self: 'Agent', input: Prompt):
-        exception = colored(f'\nNo input schema found for agent {_self.name}', color='yellow', attrs=['bold'])
-        dumped = json.dumps(input.contents, indent=4, ensure_ascii=False)
-        exception += colored(f"\n[Received Input]:", color='red', attrs=['bold'])
-        exception += colored(f"\n{dumped}", color='red')
-        dumped = json.dumps(
-            [i.annotations() for i in _self.input_schema_queue], 
-            indent=4, ensure_ascii=False)
-        exception += colored(f"\n[Input Schemas]:", color='green', attrs=['bold'])
-        exception += colored(f"\n{dumped}", color='green')
-        raise Exception(exception)
-
-    
-@dataclass(kw_only=True)
-class AgentProcessor(ABC):
-    metadata: list[Any] = field(default_factory=list)
-
-    @abstractmethod
-    def process(self, *args, **kwargs) -> dict:
-        ...
+import graphviz
 
 @dataclass(kw_only=True)
 class Agent:
@@ -71,74 +18,73 @@ class Agent:
     llm_model: Optional[LlmModel]
     system_prompt: Optional[SystemPrompt]
     role: Literal['user', 'assistant', 'user:connection']
-    input_schemas: list[type[AgentSchema]]
     output_schema: type[AgentSchema]
     processor: Optional[AgentProcessor] = None
-    graph: Optional[nx.DiGraph] = None
+    graph: Optional[graphviz.Digraph] = None # type: ignore
     metadata: list[Any] = field(default_factory=list)
     debug: dict[Literal['output', 'llm'], bool] = field(
         default_factory=lambda: {'output': False, 'llm': False}
     )
 
     def __post_init__(self):
+        self.running = False
         self.locker = threading.Lock()
-        self.output_nodes: list[Agent] = []
-        self._set_queues()
-        if self.graph is not None:
-            self.graph.add_node(self.name)
-        threading.Thread(target=self._start_loop).start()
-
-    def _set_queues(self):
-        self.connections_input_schema_queue: list[type[AgentSchema]] = [
-            i for i in self.input_schemas
-        ]
-        self.input_schema_queue: list[type[AgentSchema]] = [
-            i for i in self.input_schemas
-        ]
+        self.input_nodes: list[Agent] = []
+        self.output_nodes: list[Agent | None] = [None]
         self.inputs_args_queue: list[dict] = []
+        if self.graph is not None:
+            self.graph.node(self.name, label=self.name)
 
-    def _nodes_io(self, agent: 'Agent'):
-        for index, input_schema in enumerate(agent.input_schemas): 
-            if input_schema.annotations() == self.output_schema.annotations():
-                if agent.connections_input_schema_queue:
-                    return agent.connections_input_schema_queue.pop(index)
-                return []
-        AgentValidationErrors.nodes_io_mismatch(_self=self, agent=agent)
+    def _full_input_args_queue(self):
+        if len(self.inputs_args_queue) == 0:
+            'No input was provided'
+            return False
+        if len(self.input_nodes) == 0:
+            'In case of starting nodes where there is no input'
+            return True
+        return len(self.inputs_args_queue) == len(self.input_nodes)
 
     def _wait_for_inputs(self) -> tuple[Prompt, list[Prompt]]:
-        while len(self.inputs_args_queue) < len(self.input_schemas):
+        while not self._full_input_args_queue():
             time.sleep(0.1)
-        args = sorted(self.inputs_args_queue, key=lambda x: x['index'])
-        contents = sum([i['input'].contents for i in args], [])
-        roles = [i['input'].role for i in args]
-        histories = [i['history'] for i in args]
+
+        contents = sum([i['input'].contents for i in self.inputs_args_queue], [])
+        roles = [i['input'].role for i in self.inputs_args_queue]
+        histories = [i['history'] for i in self.inputs_args_queue]
         assert all(role == roles[0] for role in roles)
         assert all(history == histories[0] for history in histories)
         return Prompt(contents=contents, role=roles[0]), histories[0]
     
     def _node_choice(self, result: Prompt, history: list[Prompt]):
+        if self.output_nodes[0] is None:
+            assert len(self.output_nodes) == 1
+            return result
+        
         if self.output_schema.connection_type() == Replier.connection_type():
+            assert len(self.output_nodes) == 1
             return self.output_nodes[0].run(input=result, history=history)
+        
         elif self.output_schema.connection_type() == Classifier.connection_type():
             selected_node = result.contents[0][self.output_schema.connection_type()]
             for output_node in self.output_nodes:
+                assert output_node is not None
                 if output_node.name == selected_node:
                     return output_node.run(input=result, history=history)
-            raise Exception('No connection node found')
+            raise Exception(colored(
+                f'\nNo connection node found in classifier output for agent {self.name}',
+                color='yellow', attrs=['bold']
+            ))
+        
         elif self.output_schema.connection_type() == Replicator.connection_type():
-            return [
+            for output_node in self.output_nodes:
+                assert output_node is not None
                 output_node.run(input=result, history=history)
-                for output_node in self.output_nodes
-            ]
-        else:
-            raise NotImplementedError(
-                f'Connection type {self.output_schema.connection_type()} not implemented'
-            )
 
     def _start_loop(self):
         while True:
             self.start()
-            self._set_queues()
+            with self.locker:
+                self.inputs_args_queue.clear()
     
     def llm_response(
             self, input: Prompt, history: list[Prompt], debug: bool
@@ -153,11 +99,6 @@ class Agent:
         )
         self.metadata.append(response)
         return json.loads(response.output_text)
-
-    def compile(self, closed_loop=True):
-        if self.connections_input_schema_queue and closed_loop:
-            AgentValidationErrors.pending_connections(_self=self)
-        return self
 
     def start(self):
         input, history = self._wait_for_inputs()
@@ -188,6 +129,7 @@ class Agent:
             contents=[output],
             role=self.role
         )
+        
         if self.debug['output']:
             debug_colors = {
                 "system": "yellow",
@@ -195,8 +137,8 @@ class Agent:
                 "user": "blue",
                 "user:connection": "grey",
             }
-            if result.role != 'user':
-                return
+            # if result.role != 'user':
+            #     return
             print(f"\n\n{colored(f'[CHAT] - {self.name}', color='red', attrs=['bold'])}")
             print(f"{colored(f'[{result.role}]:', color=debug_colors[result.role], attrs=['bold'])}") # type: ignore
             print(f"{colored(result.content_format(show_connection_type=True), debug_colors[result.role])}") # type: ignore
@@ -204,29 +146,32 @@ class Agent:
         return result if not self.output_nodes else self._node_choice(result, history)
 
     def connect_node(self, agent: 'Agent'):
-        self._nodes_io(agent=agent)
+        self.output_nodes = list(filter(lambda x: x is not None, self.output_nodes))
         self.output_nodes.append(agent)
+        agent.input_nodes.append(self)
+        
         if self.graph is not None:
-            self.graph.add_edge(
-                self.name,
-                agent.name,
-            )
+            colors = [
+                'lime', 'tomato', 'lightblue', 'lightcoral', 'lightsalmon', 'palegreen',
+                'darkgreen', 'darkviolet', 'darkmagenta', 'orangered', 'gold',
+                'deepskyblue', 'crimson', 'mediumvioletred', 'chocolate', 'royalblue'
+            ]
+            choice = random.choice(colors)
+            self.graph.edge(
+                tail_name=self.name, 
+                head_name=agent.name, 
+                label='\n'.join(self.output_schema.annotations().keys()),
+                _attributes={'color': choice, 'fontcolor': choice}
+            ) 
     
     def run(self, input: Prompt, history: list[Prompt] = []):
         with self.locker:
-            for index, input_squema in enumerate(self.input_schema_queue):
-                for content in input.contents:
-                    try:
-                        input_squema(**content)
-                        self.inputs_args_queue.append(
-                            {'input': input, 'history': history, 'index': index}
-                        )
-                        return
-                    except:
-                        continue
-            AgentValidationErrors.no_schema_found(_self=self, input=input)
-
-
+            if not self.running:
+                threading.Thread(target=self._start_loop).start()
+                self.running = True
+            self.inputs_args_queue.append(
+                {'input': input, 'history': history}
+            )
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -234,45 +179,46 @@ if __name__ == '__main__':
 
     G = nx.DiGraph()
 
-    class ERROR_input(Responder):
-        error_input: str
+    class Processor(Replier):
+        def process(self, *args, **kwargs) -> dict:
+            return kwargs['input'].contents[0]
     
-    class A_input(Responder):
+    class A_input(Replier):
         abc_input: str
-    class A_output(Responder):
+    class A_output(Replier):
         a_output: str
     class A_prompt(SystemPrompt):
         background: str = 'você escolhe aleatoriamente um dos resultados e responde em JSON'
         steps: list[str] = []
         output_schema: Type[A_output]
     a = Agent(
-        name='a', llm_model=None, system_prompt=None, role='user',
-        input_schemas=[A_input], output_schema=A_output, graph=G
+        name='a', llm_model=None, system_prompt=None, 
+        role='user', output_schema=A_output, graph=G,
     )
 
-    class B_input(Responder):
+    class B_input(Replier):
         abc_input: str
-    class B_output(Responder):
+    class B_output(Replier):
         b_output: str
     b = Agent(
-        name='b', llm_model=None, system_prompt=None, role='user',
-        input_schemas=[B_input], output_schema=B_output, graph=G
+        name='b', llm_model=None, system_prompt=None, 
+        role='user', output_schema=B_output, graph=G
     )
 
-    class C_input(Responder):
+    class C_input(Replier):
         abc_input: str
-    class C_output(Responder):
+    class C_output(Replier):
         c_output: str
     c = Agent(
-        name='c', llm_model=None, system_prompt=None, role='user',
-        input_schemas=[B_input], output_schema=C_output, graph=G
+        name='c', llm_model=None, system_prompt=None, 
+        role='user', output_schema=C_output, graph=G
     )
 
-    class D_output(Responder):
+    class D_output(Replier):
         abc_input: str
     d = Agent(
-        name='d', llm_model=None, system_prompt=None, role='user',
-        input_schemas=[A_output, B_output, C_output], output_schema=D_output, graph=G
+        name='d', llm_model=None, system_prompt=None,
+        role='user', output_schema=D_output, graph=G, debug={'output': True}
     )
 
 
@@ -284,25 +230,6 @@ if __name__ == '__main__':
     d.connect_node(b)
     d.connect_node(c)
 
-    a.compile()
-    b.compile()
-    c.compile()
-    d.compile()
-
-
-    # input()
-    for i in range(20):
-        input()
-        choice = random.choice([
-            {'a_output': 'resposta a'},
-            {'b_output': 'resposta b'},
-            {'c_output': 'resposta c'},
-        ])
-        print(choice)
-
-        d.run(
-            input=Prompt(contents=[choice], role='user'),
-        )
 
     plt.figure(figsize=(10, 7))
     g_pos = nx.circular_layout(G)
@@ -315,3 +242,20 @@ if __name__ == '__main__':
         connectionstyle='arc3,rad=0.2',
     )
     plt.show()
+
+
+    choice = random.choice([
+        {'a_output': 'resposta a'},
+        {'b_output': 'resposta b'},
+        {'c_output': 'resposta c'},
+    ])
+    print(choice)
+    a.run(
+        input=Prompt(contents=[choice], role='user'),
+    )
+    b.run(
+        input=Prompt(contents=[choice], role='user'),
+    )
+    c.run(
+        input=Prompt(contents=[choice], role='user'),
+    )
